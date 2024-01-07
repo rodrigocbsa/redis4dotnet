@@ -1,6 +1,12 @@
-﻿// See https://aka.ms/new-console-template for more information
-using ConsoleApp;
+﻿using ConsoleApp;
 
-Console.WriteLine("Hello, World!");
+RedisConfig redisConfig = new RedisConfig(); // É estudo mas é bem feito kkk
 
-await Pipelining.Main();
+/* Pipelining tutorial 
+Pipelining pipe = new(redisConfig);
+await pipe.Run();
+*/
+
+/* Dados */
+DataStructures data = new(redisConfig);
+await data.Run();

@@ -8,32 +8,22 @@ using System.Threading.Tasks;
 
 namespace ConsoleApp
 {
-    public static class Pipelining
+    public class Pipelining
     {
-        static private ConfigurationOptions? Options;
-        static private ConnectionMultiplexer? redis;
-        public static async Task Main()
+        private readonly IRedisConfig Redis;
+        public Pipelining(IRedisConfig config) 
         {
-            Options = new ConfigurationOptions()
-            {
-                EndPoints = { Environment.GetEnvironmentVariable("REDIS_ENDPOINT") },
-                Password = Environment.GetEnvironmentVariable("REDIS_PASSWD"),
-                SslClientAuthenticationOptions = new Func<string, System.Net.Security.SslClientAuthenticationOptions>(hostName => new System.Net.Security.SslClientAuthenticationOptions
-                {
-                    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls13
-                })
-            };
-            redis = ConnectionMultiplexer.Connect(Options);
+            this.Redis = config;
+        }
 
-            var db = redis.GetDatabase();
-
-
+        public async Task Run()
+        {
             /* Enviando comandos de forma Serial */
             var stopwatch = Stopwatch.StartNew();
 
             for (var i = 0; i < 1000; i++)
             {
-                await db.PingAsync();
+                await Redis.DB.PingAsync();
             }
             Console.WriteLine($"1000 un-pipelined ping took {stopwatch.ElapsedMilliseconds} ms to execute");
 
@@ -44,7 +34,7 @@ namespace ConsoleApp
 
             for (var i = 0; i < 1000; i++)
             {
-                pingTasks.Add(db.PingAsync());
+                pingTasks.Add(Redis.DB.PingAsync());
             }
             await Task.WhenAll(pingTasks);
 
@@ -53,7 +43,7 @@ namespace ConsoleApp
 
             /* Enviando todos os comandos em lote (+ rápido) */
             pingTasks.Clear();
-            var batch = db.CreateBatch();
+            var batch = Redis.DB.CreateBatch();
             stopwatch.Restart();
             for (var i = 0; i < 1000; i++)
             {
